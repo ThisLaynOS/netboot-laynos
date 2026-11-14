@@ -1,0 +1,90 @@
+#!ipxe
+
+# LaynOS / B75CR501 iPXE Network Boot Menu
+# Ativa framebuffer grafico 1024x768 com fallback para console simples
+console --x 1024 --y 768 --picture https://cdn.jsdelivr.net/gh/LaynOS/netboot@main/bg.png || console --x 1024 --y 768
+
+# Paleta de cores para fundo escuro (fg, bg - 9 = transparente)
+cpair --foreground 7 --background 9 0
+cpair --foreground 6 --background 9 1
+cpair --foreground 0 --background 6 2
+cpair --foreground 7 --background 9 3
+
+set arch x86_64
+set menu_timeout 15000
+isset ${ip} || dhcp
+
+:start
+menu B75CR501 Network Boot (UEFI x86_64) - IP: ${net0/ip} | MAC: ${net0/mac}
+item --gap --             --------------------- Sistemas Operacionais ---------------------
+item arch                 Arch Linux (Live / Instalador Oficial)
+item alpine               Alpine Linux (Netboot Oficial)
+item debian               Debian (Instalador / Live via netboot.xyz)
+item ubuntu               Ubuntu (Instalador / Live via netboot.xyz)
+item --gap --             --------------------- Ferramentas & Catalogo ----------------------
+item memtest              Memtest86+ 9.00 (Diagnostico de Memoria UEFI)
+item netbootxyz           Catalogo Completo (netboot.xyz)
+item --gap --             --------------------------- Sistema -----------------------------
+item shell                Shell iPXE
+item reboot               Reiniciar Sistema
+item exit                 Sair para o UEFI / Disco Local
+
+choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto exit
+
+:arch
+echo Carregando Arch Linux Netboot...
+imgfree
+chain --autofree https://archlinux.org/releng/netboot/archlinux.ipxe || goto error
+goto start
+
+:alpine
+echo Carregando Alpine Linux Netboot...
+imgfree
+chain --autofree https://boot.alpinelinux.org/boot.ipxe || goto error
+goto start
+
+:debian
+echo Carregando menu Debian...
+imgfree
+chain --autofree https://boot.netboot.xyz/boot.cfg ||
+set menu debian
+chain --autofree https://boot.netboot.xyz/debian.ipxe || goto error
+goto start
+
+:ubuntu
+echo Carregando menu Ubuntu...
+imgfree
+chain --autofree https://boot.netboot.xyz/boot.cfg ||
+set menu ubuntu
+chain --autofree https://boot.netboot.xyz/ubuntu.ipxe || goto error
+goto start
+
+:memtest
+echo Carregando Memtest86+ (UEFI x86_64)...
+imgfree
+kernel https://github.com/netbootxyz/asset-mirror/releases/download/9.00-3c42ace6/mt86p_x86_64 || goto error
+boot || goto error
+goto start
+
+:netbootxyz
+echo Carregando netboot.xyz...
+imgfree
+chain --autofree https://boot.netboot.xyz/ipxe/netboot.xyz.efi || goto error
+goto start
+
+:shell
+echo Digite 'exit' para retornar ao menu.
+shell
+goto start
+
+:reboot
+reboot
+
+:exit
+exit 0
+
+:error
+echo
+echo Falha ao carregar a opcao selecionada. Pressione qualquer tecla para voltar ao menu...
+prompt
+goto start
