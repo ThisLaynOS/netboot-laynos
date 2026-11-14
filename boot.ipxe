@@ -1,51 +1,53 @@
 #!ipxe
 
 # =========================================================================
-# LAYNCORP // B75CR501 CLOUD BOOT - MODERN UI THEME
+# LAYNCORP // B75CR501 CLOUD BOOT - MODERN UI THEME (1024x768 GOP)
 # =========================================================================
-
-# Paleta RGB Customizada (ANSI 0-7)
-colour --rgb 0x090f12 0   # 0: Onyx Dark (Texto sobre barra ativa / Fundo)
-colour --rgb 0xf43f5e 1   # 1: Coral Red (Alertas / Erros)
-colour --rgb 0x10b981 2   # 2: Emerald Green (Sucesso / Online)
-colour --rgb 0x64748b 3   # 3: Slate Muted (Separadores / Gaps / Subtitulos)
-colour --rgb 0x0ea5e9 4   # 4: Sky Blue (Destaques secundarios)
-colour --rgb 0x8b5cf6 5   # 5: Violet
-colour --rgb 0x14b8a6 6   # 6: LaynOS Teal (Destaque Principal / Barra Ativa)
-colour --rgb 0xf1f5f9 7   # 7: Ice White (Texto Principal)
-
-# Pares de Cores da UI (9 = Background Transparente sobre o Card do PNG)
-cpair --foreground 7 --background 9 0   # Texto padrao dos itens
-cpair --foreground 6 --background 9 1   # Teclas de atalho em destaque
-cpair --foreground 0 --background 6 2   # Barra de selecao (Texto escuro no fundo Teal)
-cpair --foreground 3 --background 9 3   # Gaps / Categorias em cinza suave (Slate)
-cpair --foreground 2 --background 9 4   # Status positivo
-
-# Framebuffer 1920x1080 com margens calibradas para o Card UI central
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245 --picture https://raw.githubusercontent.com/ThisLaynOS/netboot-laynos/main/bg.png || console --x 1024 --y 768
 
 set arch x86_64
 set menu_timeout 30000
 isset ${net0/ip} || dhcp
 
+# Paleta RGB Customizada (ANSI 0-7)
+colour --rgb 0x090f12 0
+colour --rgb 0xf43f5e 1
+colour --rgb 0x10b981 2
+colour --rgb 0x64748b 3
+colour --rgb 0x0ea5e9 4
+colour --rgb 0x8b5cf6 5
+colour --rgb 0x14b8a6 6
+colour --rgb 0xf1f5f9 7
+
+# Pares de Cores da UI (9 = Background Transparente sobre o Card do PNG)
+cpair --foreground 7 --background 9 0
+cpair --foreground 6 --background 9 1
+cpair --foreground 0 --background 6 2
+cpair --foreground 3 --background 9 3
+cpair --foreground 2 --background 9 4
+
+:init_ui
+imgfree
+imgfetch --name bg https://raw.githubusercontent.com/ThisLaynOS/netboot-laynos/main/bg.png || imgfetch --name bg https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@main/bg.png ||
+console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 --picture bg || console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 || console
+
 :start
-menu LAYNCORP CLOUD BOOT   //   NODE: ${net0/ip}   //   LINK: UP
+menu LAYNCORP CLOUD BOOT  //  IP: ${net0/ip}  //  MAC: ${net0/mac}
 item --gap --
-item --gap --             SYSTEM IMAGES ----------------------------------------------------
-item --key 1 arch          1   Arch Linux                   Rolling  |  Official Releng Live
-item --key 2 alpine        2   Alpine Linux                 3.21 LTS |  Minimal RAM Rootfs
-item --key 3 debian        3   Debian GNU/Linux             Stable   |  Official Netboot
-item --key 4 fedora        4   Fedora Workstation/Server    41       |  Direct Kernel Boot
+item --gap --   SYSTEM IMAGES ---------------------------------------------
+item --key 1 arch        1  Arch Linux               Rolling  | Releng Live
+item --key 2 alpine      2  Alpine Linux             3.21 LTS | RAM Rootfs
+item --key 3 debian      3  Debian GNU/Linux         Stable   | Netboot
+item --key 4 fedora      4  Fedora Linux             41       | Direct Boot
 item --gap --
-item --gap --             DIAGNOSTICS & CLOUD HUB ------------------------------------------
-item --key 5 memtest       5   Memtest86+ UEFI              v9.00    |  DDR3 Memory Analyzer
-item --key 6 netbootxyz    6   netboot.xyz Hub              Cloud    |  100+ Live ISOs & Tools
+item --gap --   DIAGNOSTICS & CLOUD HUB -----------------------------------
+item --key 5 memtest     5  Memtest86+ UEFI          v9.00    | RAM Analyzer
+item --key 6 netbootxyz  6  netboot.xyz Hub          Cloud    | 100+ ISOs
 item --gap --
-item --gap --             FIRMWARE & SESSION -----------------------------------------------
-item --key i sysinfo       I   Hardware & Network Telemetry
-item --key s shell         S   iPXE Command Line Interface
-item --key r reboot        R   Warm Reboot Platform
-item --key x exit          X   Boot Local Storage (NVMe / SATA)
+item --gap --   FIRMWARE & SESSION ----------------------------------------
+item --key i sysinfo     I  Hardware & Network Telemetry
+item --key s shell       S  iPXE Command Line Interface
+item --key r reboot      R  Warm Reboot Platform
+item --key x exit        X  Boot Local Storage (NVMe / SATA)
 
 choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto exit
 
@@ -54,104 +56,98 @@ choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto
 # =========================================================================
 
 :arch
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245
 echo
 echo  [LAYNCORP CLOUD] Inicializando Arch Linux (x86_64)...
-echo  ------------------------------------------------------------------
+echo  ----------------------------------------------------------------
 echo  -> Conectando ao mirror oficial archlinux.org via HTTPS...
 imgfree
 chain --autofree https://archlinux.org/releng/netboot/archlinux.ipxe || goto error
-goto start
+goto init_ui
 
 :alpine
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245
 echo
 echo  [LAYNCORP CLOUD] Inicializando Alpine Linux LTS (RAM Disk)...
-echo  ------------------------------------------------------------------
+echo  ----------------------------------------------------------------
 imgfree
 set alpine-base http://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/netboot
 echo  -> Baixando Kernel (vmlinuz-lts)...
-kernel ${alpine-base}/vmlinuz-lts initrd=initramfs-lts alpine_dev=tmpfs:vfat modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine-base}/modloop-lts ip=dhcp
+kernel ${alpine-base}/vmlinuz-lts initrd=initramfs-lts alpine_dev=tmpfs:vfat modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine-base}/modloop-lts ip=dhcp || goto error
 echo  -> Baixando Initramfs (initramfs-lts)...
-initrd ${alpine-base}/initramfs-lts
+initrd ${alpine-base}/initramfs-lts || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
-goto start
+goto init_ui
 
 :debian
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245
 echo
 echo  [LAYNCORP CLOUD] Inicializando Debian Stable Netboot (amd64)...
-echo  ------------------------------------------------------------------
+echo  ----------------------------------------------------------------
 imgfree
 set deb-base http://deb.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/debian-installer/amd64
 echo  -> Baixando Kernel Debian...
-kernel ${deb-base}/linux initrd=initrd.gz --- quiet
+kernel ${deb-base}/linux initrd=initrd.gz --- quiet || goto error
 echo  -> Baixando Initrd...
-initrd ${deb-base}/initrd.gz
+initrd ${deb-base}/initrd.gz || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
-goto start
+goto init_ui
 
 :fedora
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245
 echo
-echo  [LAYNCORP CLOUD] Inicializando Fedora 41 Everything Netinstall...
-echo  ------------------------------------------------------------------
+echo  [LAYNCORP CLOUD] Inicializando Fedora 41 Netinstall...
+echo  ----------------------------------------------------------------
 imgfree
 set fed-base https://download.fedoraproject.org/pub/fedora/linux/releases/41/Everything/x86_64/os
 echo  -> Baixando Kernel (vmlinuz)...
-kernel ${fed-base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fed-base} ip=dhcp
+kernel ${fed-base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fed-base} ip=dhcp || goto error
 echo  -> Baixando Initrd (initrd.img)...
-initrd ${fed-base}/images/pxeboot/initrd.img
+initrd ${fed-base}/images/pxeboot/initrd.img || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
-goto start
+goto init_ui
 
 :memtest
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245
 echo
 echo  [LAYNCORP CLOUD] Carregando Memtest86+ v9.00 (UEFI x86_64)...
-echo  ------------------------------------------------------------------
+echo  ----------------------------------------------------------------
 imgfree
 kernel https://github.com/netbootxyz/asset-mirror/releases/download/9.00-3c42ace6/mt86p_x86_64 || goto error
 boot || goto error
-goto start
+goto init_ui
 
 :netbootxyz
-console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245
 echo
 echo  [LAYNCORP CLOUD] Encadeando suite completa netboot.xyz...
-echo  ------------------------------------------------------------------
+echo  ----------------------------------------------------------------
 imgfree
 chain --autofree https://boot.netboot.xyz/ipxe/netboot.xyz.efi || goto error
-goto start
+goto init_ui
 
 :sysinfo
-menu LAYNCORP TELEMETRY   //   B75CR501 COREBOOT + EDK II
+menu LAYNCORP TELEMETRY  //  B75CR501 COREBOOT + EDK II
 item --gap --
-item --gap --             NETWORK INTERFACE (REALTEK RTL8111/8168) -------------------------
-item --gap --             MAC Address      : ${net0/mac}
-item --gap --             IPv4 Address     : ${net0/ip}
-item --gap --             Subnet Mask      : ${net0/netmask}
-item --gap --             Default Gateway  : ${net0/gateway}
-item --gap --             DNS Server       : ${dns}
+item --gap --   NETWORK INTERFACE (REALTEK RTL8111/8168) ------------------
+item --gap --   MAC Address      : ${net0/mac}
+item --gap --   IPv4 Address     : ${net0/ip}
+item --gap --   Subnet Mask      : ${net0/netmask}
+item --gap --   Default Gateway  : ${net0/gateway}
+item --gap --   DNS Server       : ${dns}
 item --gap --
-item --gap --             PLATFORM ARCHITECTURE --------------------------------------------
-item --gap --             Firmware         : coreboot + MrChromebox EDK II (UEFI x86_64)
-item --gap --             Platform         : ${platform} (${buildarch})
-item --gap --             System UUID      : ${uuid}
+item --gap --   PLATFORM ARCHITECTURE -------------------------------------
+item --gap --   Firmware         : coreboot + MrChromebox EDK II (x86_64)
+item --gap --   Platform         : ${platform} (${buildarch})
+item --gap --   System UUID      : ${uuid}
 item --gap --
-item --key b back         B   Voltar ao Menu Principal
-choose --default back target && goto start
+item --key b back  B  Voltar ao Menu Principal
+choose --default back target && goto start || goto start
 
 :shell
-console --x 1920 --y 1080 --left 120 --right 120 --top 100 --bottom 100
+console --x 1024 --y 768 --left 48 --right 48 --top 48 --bottom 48 ||
 echo
-echo  LAYNCORP iPXE Shell  |  Digite 'exit' para retornar a interface grafica.
-echo  ------------------------------------------------------------------------
+echo  LAYNCORP iPXE Shell | Digite 'exit' para retornar a interface grafica.
+echo  ----------------------------------------------------------------------
 shell
-goto start
+goto init_ui
 
 :reboot
 reboot
@@ -162,6 +158,6 @@ exit 0
 :error
 echo
 echo  [!] FALHA DE REDE OU IMAGEM INDISPONIVEL
-echo  Verifique o link Ethernet ou pressione qualquer tecla para voltar ao menu...
+echo  Pressione qualquer tecla para recarregar o menu...
 prompt
-goto start
+goto init_ui
