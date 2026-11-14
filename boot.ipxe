@@ -2,7 +2,7 @@
 
 # LaynOS / B75CR501 iPXE Network Boot Menu
 # Ativa framebuffer grafico 1024x768 com fallback para console simples
-console --x 1024 --y 768 --picture https://cdn.jsdelivr.net/gh/LaynOS/netboot@main/bg.png || console --x 1024 --y 768
+console --x 1024 --y 768 --picture https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@main/bg.png || console --x 1024 --y 768
 
 # Paleta de cores para fundo escuro (fg, bg - 9 = transparente)
 cpair --foreground 7 --background 9 0
