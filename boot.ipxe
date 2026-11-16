@@ -18,6 +18,7 @@ set debian_base http://deb.debian.org/debian/dists/stable/main/installer-amd64/c
 set fedora_version 44
 set fedora_base https://download.fedoraproject.org/pub/fedora/linux/releases/${fedora_version}/Everything/${arch}/os
 set fedora_http http://download.fedoraproject.org/pub/fedora/linux/releases/${fedora_version}/Everything/${arch}/os
+set win_base https://laynos.app/win11
 
 isset ${net0/ip} || dhcp || goto network_error
 
@@ -162,11 +163,19 @@ goto init_ui
 
 :windows
 echo
-echo  [LAYNOS CLOUD] Instalacao Windows via Rede (Sem Pendrive)
+echo  [LAYNOS CLOUD] Inicializando Windows 11 Enterprise LTSC (PT-BR)...
 echo  ================================================================
-echo  [+] Este slot sera conectado ao wimboot + WinPE / servidor SMB.
-echo  [+] Retornando ao menu grafico em 3 segundos...
-sleep 3
+imgfree
+echo  [+] Baixando wimboot + scripts de bypass (TPM/Secure Boot)...
+kernel ${win_base}/wimboot gui || goto error
+initrd ${win_base}/efi/microsoft/boot/bcd BCD || goto error
+initrd ${win_base}/boot/boot.sdi boot.sdi || goto error
+initrd ${project_url}/win/winpeshl.ini winpeshl.ini || initrd ${project_fallback}/win/winpeshl.ini winpeshl.ini || goto error
+initrd ${project_url}/win/laynos_win.cmd laynos_win.cmd || initrd ${project_fallback}/win/laynos_win.cmd laynos_win.cmd || goto error
+echo  [+] Baixando Windows PE (boot.wim ~527 MB via laynos.app)...
+initrd ${win_base}/sources/boot.wim boot.wim || goto error
+echo  [+] Executando boot WinPE UEFI...
+boot || goto error
 goto init_ui
 
 :memtest
