@@ -18,7 +18,7 @@ set fedora_base https://download.fedoraproject.org/pub/fedora/linux/releases/${f
 isset ${net0/ip} || dhcp || goto network_error
 
 # Paleta RGB Customizada (ANSI 0-7)
-colour --rgb 0x090f12 0
+colour --rgb 0x10242b 0
 colour --rgb 0xf43f5e 1
 colour --rgb 0x10b981 2
 colour --rgb 0x64748b 3
