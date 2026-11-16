@@ -40,6 +40,9 @@ cpair --foreground 2 --background 9 4
 
 :init_ui
 imgfree
+imgfetch --name bg1080 ${project_url}/bg-1080p.png || imgfetch --name bg1080 ${project_fallback}/bg-1080p.png ||
+console --x 1920 --y 1080 --left 540 --right 540 --top 275 --bottom 245 --picture bg1080 && goto start ||
+imgfree
 imgfetch --name bg ${project_url}/bg.png || imgfetch --name bg ${project_fallback}/bg.png ||
 console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 --picture bg && goto start ||
 imgfree
@@ -160,7 +163,7 @@ item --key b back  B  Voltar ao Menu Principal
 choose --default back target && goto start || goto start
 
 :shell
-console --x 1024 --y 768 --left 48 --right 48 --top 48 --bottom 48 ||
+console --x 1920 --y 1080 --left 64 --right 64 --top 64 --bottom 64 || console --x 1024 --y 768 --left 48 --right 48 --top 48 --bottom 48 ||
 echo
 echo  LAYNOS iPXE Shell | Digite 'exit' para retornar a interface grafica.
 echo  ----------------------------------------------------------------------
