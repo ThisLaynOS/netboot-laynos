@@ -1,15 +1,24 @@
 #!ipxe
 
 # =========================================================================
-# LAYNCORP // B75CR501 CLOUD BOOT - MODERN UI THEME (1024x768 GOP)
+# LAYNOS // CLOUD BOOT MENU
 # =========================================================================
+# Keep the endpoints in one place so mirrors and release versions can be
+# updated without changing every menu entry.
 
 set arch x86_64
 set menu_timeout 30000
-isset ${net0/ip} || dhcp
+set release_branch main
+set project_url https://raw.githubusercontent.com/ThisLaynOS/netboot-laynos/${release_branch}
+set alpine_base https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/${arch}/netboot
+set debian_base https://deb.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/debian-installer/amd64
+set fedora_version 44
+set fedora_base https://download.fedoraproject.org/pub/fedora/linux/releases/${fedora_version}/Everything/${arch}/os
+
+isset ${net0/ip} || dhcp || goto network_error
 
 # Paleta RGB Customizada (ANSI 0-7)
-colour --rgb 0x090f12 0
+colour --rgb 0x10242b 0
 colour --rgb 0xf43f5e 1
 colour --rgb 0x10b981 2
 colour --rgb 0x64748b 3
@@ -27,27 +36,28 @@ cpair --foreground 2 --background 9 4
 
 :init_ui
 imgfree
-imgfetch --name bg https://raw.githubusercontent.com/ThisLaynOS/netboot-laynos/main/bg.png || imgfetch --name bg https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@main/bg.png ||
+imgfetch --name bg ${project_url}/bg.png || imgfetch --name bg https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@${release_branch}/bg.png ||
 console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 --picture bg || console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 || console
 
 :start
-menu LAYNCORP CLOUD BOOT  //  IP: ${net0/ip}  //  MAC: ${net0/mac}
+menu LAYNOS CLOUD BOOT  //  IP: ${net0/ip}  //  MAC: ${net0/mac}
 item --gap --
-item --gap --   SYSTEM IMAGES ---------------------------------------------
-item --key 1 arch        1  Arch Linux               Rolling  | Releng Live
-item --key 2 alpine      2  Alpine Linux             3.21 LTS | RAM Rootfs
-item --key 3 debian      3  Debian GNU/Linux         Stable   | Netboot
-item --key 4 fedora      4  Fedora Linux             41       | Direct Boot
+item --gap --   OPERATING SYSTEMS -----------------------------------------
+item --key 1 arch        1  Arch Linux               Rolling  | Live Installer
+item --key 2 alpine      2  Alpine Linux             Stable   | RAM Rootfs
+item --key 3 debian      3  Debian GNU/Linux         Stable   | Network Installer
+item --key 4 fedora      4  Fedora Linux             ${fedora_version}       | Network Installer
 item --gap --
-item --gap --   DIAGNOSTICS & CLOUD HUB -----------------------------------
-item --key 5 memtest     5  Memtest86+ UEFI          v9.00    | RAM Analyzer
-item --key 6 netbootxyz  6  netboot.xyz Hub          Cloud    | 100+ ISOs
+item --gap --   TOOLS & RECOVERY ------------------------------------------
+item --key 5 memtest     5  Memtest86+ UEFI          Latest   | Memory Test
+item --key 6 netbootxyz   6  netboot.xyz Hub         Online   | ISO Library
 item --gap --
-item --gap --   FIRMWARE & SESSION ----------------------------------------
-item --key i sysinfo     I  Hardware & Network Telemetry
+item --gap --   SYSTEM -----------------------------------------------------
+item --key i sysinfo     I  Hardware & Network Information
 item --key s shell       S  iPXE Command Line Interface
-item --key r reboot      R  Warm Reboot Platform
-item --key x exit        X  Boot Local Storage (NVMe / SATA)
+item --key r reboot      R  Reboot
+item --key x local       X  Boot Local Disk (NVMe / SATA)
+item --key q exit        Q  Exit to Firmware
 
 choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto exit
 
@@ -57,58 +67,55 @@ choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto
 
 :arch
 echo
-echo  [LAYNCORP CLOUD] Inicializando Arch Linux (x86_64)...
+echo  [LAYNOS CLOUD] Inicializando Arch Linux (${arch})...
 echo  ----------------------------------------------------------------
-echo  -> Conectando ao mirror oficial archlinux.org via HTTPS...
+echo  -> Conectando ao instalador oficial via HTTPS...
 imgfree
 chain --autofree https://archlinux.org/releng/netboot/archlinux.ipxe || goto error
 goto init_ui
 
 :alpine
 echo
-echo  [LAYNCORP CLOUD] Inicializando Alpine Linux LTS (RAM Disk)...
+echo  [LAYNOS CLOUD] Inicializando Alpine Linux (RAM Disk)...
 echo  ----------------------------------------------------------------
 imgfree
-set alpine-base http://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/netboot
 echo  -> Baixando Kernel (vmlinuz-lts)...
-kernel ${alpine-base}/vmlinuz-lts initrd=initramfs-lts alpine_dev=tmpfs:vfat modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine-base}/modloop-lts ip=dhcp || goto error
+kernel ${alpine_base}/vmlinuz-lts initrd=initramfs-lts alpine_dev=tmpfs:vfat modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine_base}/modloop-lts ip=dhcp || goto error
 echo  -> Baixando Initramfs (initramfs-lts)...
-initrd ${alpine-base}/initramfs-lts || goto error
+initrd ${alpine_base}/initramfs-lts || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :debian
 echo
-echo  [LAYNCORP CLOUD] Inicializando Debian Stable Netboot (amd64)...
+echo  [LAYNOS CLOUD] Inicializando Debian Stable Netboot (amd64)...
 echo  ----------------------------------------------------------------
 imgfree
-set deb-base http://deb.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/debian-installer/amd64
 echo  -> Baixando Kernel Debian...
-kernel ${deb-base}/linux initrd=initrd.gz --- quiet || goto error
+kernel ${debian_base}/linux initrd=initrd.gz --- quiet || goto error
 echo  -> Baixando Initrd...
-initrd ${deb-base}/initrd.gz || goto error
+initrd ${debian_base}/initrd.gz || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :fedora
 echo
-echo  [LAYNCORP CLOUD] Inicializando Fedora 41 Netinstall...
+echo  [LAYNOS CLOUD] Inicializando Fedora ${fedora_version} Netinstall...
 echo  ----------------------------------------------------------------
 imgfree
-set fed-base https://download.fedoraproject.org/pub/fedora/linux/releases/41/Everything/x86_64/os
 echo  -> Baixando Kernel (vmlinuz)...
-kernel ${fed-base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fed-base} ip=dhcp || goto error
+kernel ${fedora_base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fedora_base} ip=dhcp || goto error
 echo  -> Baixando Initrd (initrd.img)...
-initrd ${fed-base}/images/pxeboot/initrd.img || goto error
+initrd ${fedora_base}/images/pxeboot/initrd.img || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :memtest
 echo
-echo  [LAYNCORP CLOUD] Carregando Memtest86+ v9.00 (UEFI x86_64)...
+echo  [LAYNOS CLOUD] Carregando Memtest86+ (UEFI x86_64)...
 echo  ----------------------------------------------------------------
 imgfree
 kernel https://github.com/netbootxyz/asset-mirror/releases/download/9.00-3c42ace6/mt86p_x86_64 || goto error
@@ -117,25 +124,25 @@ goto init_ui
 
 :netbootxyz
 echo
-echo  [LAYNCORP CLOUD] Encadeando suite completa netboot.xyz...
+echo  [LAYNOS CLOUD] Encadeando suite completa netboot.xyz...
 echo  ----------------------------------------------------------------
 imgfree
 chain --autofree https://boot.netboot.xyz/ipxe/netboot.xyz.efi || goto error
 goto init_ui
 
 :sysinfo
-menu LAYNCORP TELEMETRY  //  B75CR501 COREBOOT + EDK II
+menu LAYNOS SYSTEM INFORMATION
 item --gap --
-item --gap --   NETWORK INTERFACE (REALTEK RTL8111/8168) ------------------
+item --gap --   NETWORK ---------------------------------------------------
 item --gap --   MAC Address      : ${net0/mac}
 item --gap --   IPv4 Address     : ${net0/ip}
 item --gap --   Subnet Mask      : ${net0/netmask}
 item --gap --   Default Gateway  : ${net0/gateway}
 item --gap --   DNS Server       : ${dns}
 item --gap --
-item --gap --   PLATFORM ARCHITECTURE -------------------------------------
-item --gap --   Firmware         : coreboot + MrChromebox EDK II (x86_64)
-item --gap --   Platform         : ${platform} (${buildarch})
+item --gap --   PLATFORM --------------------------------------------------
+item --gap --   Platform         : ${platform}
+item --gap --   Build Architecture: ${buildarch}
 item --gap --   System UUID      : ${uuid}
 item --gap --
 item --key b back  B  Voltar ao Menu Principal
@@ -144,7 +151,7 @@ choose --default back target && goto start || goto start
 :shell
 console --x 1024 --y 768 --left 48 --right 48 --top 48 --bottom 48 ||
 echo
-echo  LAYNCORP iPXE Shell | Digite 'exit' para retornar a interface grafica.
+echo  LAYNOS iPXE Shell | Digite 'exit' para retornar a interface grafica.
 echo  ----------------------------------------------------------------------
 shell
 goto init_ui
@@ -152,12 +159,25 @@ goto init_ui
 :reboot
 reboot
 
+:local
+echo
+echo  [LAYNOS] Tentando inicializar o primeiro disco local...
+echo  ----------------------------------------------------------------
+sanboot --no-describe --drive 0x80 || goto error
+
 :exit
 exit 0
 
+:network_error
+echo
+echo  [!] Nenhuma interface de rede configurada.
+echo  Verifique o cabo, DHCP ou a configuracao da rede.
+prompt
+goto init_ui
+
 :error
 echo
-echo  [!] FALHA DE REDE OU IMAGEM INDISPONIVEL
-echo  Pressione qualquer tecla para recarregar o menu...
+echo  [!] Falha ao carregar o alvo selecionado.
+echo  Verifique a conectividade e tente novamente.
 prompt
 goto init_ui
