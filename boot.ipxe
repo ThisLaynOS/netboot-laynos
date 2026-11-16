@@ -9,11 +9,15 @@
 set arch x86_64
 set menu_timeout 30000
 set release_branch main
-set project_url https://raw.githubusercontent.com/ThisLaynOS/netboot-laynos/${release_branch}
-set alpine_base https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/${arch}/netboot
-set debian_base https://deb.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/debian-installer/amd64
+set project_url https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@${release_branch}
+set project_fallback https://raw.githubusercontent.com/ThisLaynOS/netboot-laynos/${release_branch}
+set arch_base https://geo.mirror.pkgbuild.com/iso/latest
+set alpine_base http://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/${arch}/netboot
+set alpine_repo http://dl-cdn.alpinelinux.org/alpine/latest-stable/main
+set debian_base http://deb.debian.org/debian/dists/stable/main/installer-amd64/current/images/netboot/debian-installer/amd64
 set fedora_version 44
 set fedora_base https://download.fedoraproject.org/pub/fedora/linux/releases/${fedora_version}/Everything/${arch}/os
+set fedora_http http://download.fedoraproject.org/pub/fedora/linux/releases/${fedora_version}/Everything/${arch}/os
 
 isset ${net0/ip} || dhcp || goto network_error
 
@@ -36,7 +40,7 @@ cpair --foreground 2 --background 9 4
 
 :init_ui
 imgfree
-imgfetch --name bg ${project_url}/bg.png || imgfetch --name bg https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@${release_branch}/bg.png ||
+imgfetch --name bg ${project_url}/bg.png || imgfetch --name bg ${project_fallback}/bg.png ||
 console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 --picture bg || console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 || console
 
 :start
@@ -69,9 +73,13 @@ choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto
 echo
 echo  [LAYNOS CLOUD] Inicializando Arch Linux (${arch})...
 echo  ----------------------------------------------------------------
-echo  -> Conectando ao instalador oficial via HTTPS...
 imgfree
-chain --autofree https://archlinux.org/releng/netboot/archlinux.ipxe || goto error
+echo  -> Baixando Kernel (vmlinuz-linux)...
+kernel ${arch_base}/arch/boot/${arch}/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${arch_base}/ archisobasedir=arch cms_verify=y ip=dhcp net.ifnames=0 || goto error
+echo  -> Baixando Initramfs (initramfs-linux.img)...
+initrd ${arch_base}/arch/boot/${arch}/initramfs-linux.img || goto error
+echo  -> Executando boot UEFI...
+boot || goto error
 goto init_ui
 
 :alpine
@@ -80,7 +88,7 @@ echo  [LAYNOS CLOUD] Inicializando Alpine Linux (RAM Disk)...
 echo  ----------------------------------------------------------------
 imgfree
 echo  -> Baixando Kernel (vmlinuz-lts)...
-kernel ${alpine_base}/vmlinuz-lts initrd=initramfs-lts alpine_dev=tmpfs:vfat modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine_base}/modloop-lts ip=dhcp || goto error
+kernel ${alpine_base}/vmlinuz-lts initrd=initramfs-lts modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine_base}/modloop-lts alpine_repo=${alpine_repo} ip=dhcp || goto error
 echo  -> Baixando Initramfs (initramfs-lts)...
 initrd ${alpine_base}/initramfs-lts || goto error
 echo  -> Executando boot UEFI...
@@ -106,9 +114,9 @@ echo  [LAYNOS CLOUD] Inicializando Fedora ${fedora_version} Netinstall...
 echo  ----------------------------------------------------------------
 imgfree
 echo  -> Baixando Kernel (vmlinuz)...
-kernel ${fedora_base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fedora_base} ip=dhcp || goto error
+kernel ${fedora_base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fedora_base} ip=dhcp || kernel ${fedora_http}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fedora_http} ip=dhcp || goto error
 echo  -> Baixando Initrd (initrd.img)...
-initrd ${fedora_base}/images/pxeboot/initrd.img || goto error
+initrd ${fedora_base}/images/pxeboot/initrd.img || initrd ${fedora_http}/images/pxeboot/initrd.img || goto error
 echo  -> Executando boot UEFI...
 boot || goto error
 goto init_ui
@@ -161,9 +169,10 @@ reboot
 
 :local
 echo
-echo  [LAYNOS] Tentando inicializar o primeiro disco local...
+echo  [LAYNOS] Inicializando o disco local via firmware...
 echo  ----------------------------------------------------------------
-sanboot --no-describe --drive 0x80 || goto error
+iseq ${platform} pcbios && sanboot --no-describe --drive 0x80 ||
+exit 0
 
 :exit
 exit 0
