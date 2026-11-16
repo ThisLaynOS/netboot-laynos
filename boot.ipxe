@@ -78,59 +78,59 @@ choose --default exit --timeout ${menu_timeout} target && goto ${target} || goto
 :arch
 echo
 echo  [LAYNOS CLOUD] Inicializando Arch Linux (${arch})...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 imgfree
-echo  -> Baixando Kernel (vmlinuz-linux)...
+echo  [+] Baixando Kernel (vmlinuz-linux)...
 kernel ${arch_base}/arch/boot/${arch}/vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${arch_base}/ archisobasedir=arch cms_verify=y ip=dhcp net.ifnames=0 || goto error
-echo  -> Baixando Initramfs (initramfs-linux.img)...
+echo  [+] Baixando Initramfs (initramfs-linux.img)...
 initrd ${arch_base}/arch/boot/${arch}/initramfs-linux.img || goto error
-echo  -> Executando boot UEFI...
+echo  [+] Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :alpine
 echo
 echo  [LAYNOS CLOUD] Inicializando Alpine Linux (RAM Disk)...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 imgfree
-echo  -> Baixando Kernel (vmlinuz-lts)...
+echo  [+] Baixando Kernel (vmlinuz-lts)...
 kernel ${alpine_base}/vmlinuz-lts initrd=initramfs-lts modules=loop,squashfs,sd-mod,usb-storage,r8169 modloop=${alpine_base}/modloop-lts alpine_repo=${alpine_repo} ip=dhcp || goto error
-echo  -> Baixando Initramfs (initramfs-lts)...
+echo  [+] Baixando Initramfs (initramfs-lts)...
 initrd ${alpine_base}/initramfs-lts || goto error
-echo  -> Executando boot UEFI...
+echo  [+] Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :debian
 echo
 echo  [LAYNOS CLOUD] Inicializando Debian Stable Netboot (amd64)...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 imgfree
-echo  -> Baixando Kernel Debian...
+echo  [+] Baixando Kernel Debian...
 kernel ${debian_base}/linux initrd=initrd.gz --- quiet || goto error
-echo  -> Baixando Initrd...
+echo  [+] Baixando Initrd...
 initrd ${debian_base}/initrd.gz || goto error
-echo  -> Executando boot UEFI...
+echo  [+] Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :fedora
 echo
 echo  [LAYNOS CLOUD] Inicializando Fedora ${fedora_version} Netinstall...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 imgfree
-echo  -> Baixando Kernel (vmlinuz)...
+echo  [+] Baixando Kernel (vmlinuz)...
 kernel ${fedora_base}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fedora_base} ip=dhcp || kernel ${fedora_http}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2=${fedora_http} ip=dhcp || goto error
-echo  -> Baixando Initrd (initrd.img)...
+echo  [+] Baixando Initrd (initrd.img)...
 initrd ${fedora_base}/images/pxeboot/initrd.img || initrd ${fedora_http}/images/pxeboot/initrd.img || goto error
-echo  -> Executando boot UEFI...
+echo  [+] Executando boot UEFI...
 boot || goto error
 goto init_ui
 
 :memtest
 echo
 echo  [LAYNOS CLOUD] Carregando Memtest86+ (UEFI x86_64)...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 imgfree
 kernel https://github.com/netbootxyz/asset-mirror/releases/download/9.00-3c42ace6/mt86p_x86_64 || goto error
 boot || goto error
@@ -139,7 +139,7 @@ goto init_ui
 :netbootxyz
 echo
 echo  [LAYNOS CLOUD] Encadeando suite completa netboot.xyz...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 imgfree
 chain --autofree https://boot.netboot.xyz/ipxe/netboot.xyz.efi || goto error
 goto init_ui
@@ -166,7 +166,7 @@ choose --default back target && goto start || goto start
 console --x 1920 --y 1080 --left 64 --right 64 --top 64 --bottom 64 || console --x 1024 --y 768 --left 48 --right 48 --top 48 --bottom 48 ||
 echo
 echo  LAYNOS iPXE Shell | Digite 'exit' para retornar a interface grafica.
-echo  ----------------------------------------------------------------------
+echo  ======================================================================
 shell
 goto init_ui
 
@@ -176,7 +176,7 @@ reboot
 :local
 echo
 echo  [LAYNOS] Inicializando o disco local via firmware...
-echo  ----------------------------------------------------------------
+echo  ================================================================
 iseq ${platform} pcbios && sanboot --no-describe --drive 0x80 ||
 exit 0
 
