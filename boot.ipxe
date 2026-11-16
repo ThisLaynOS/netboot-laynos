@@ -41,6 +41,9 @@ cpair --foreground 2 --background 9 4
 :init_ui
 imgfree
 imgfetch --name bg ${project_url}/bg.png || imgfetch --name bg ${project_fallback}/bg.png ||
+console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 --picture bg && goto start ||
+imgfree
+imgfetch --name bg https://cdn.jsdelivr.net/gh/ThisLaynOS/netboot-laynos@35e4f57/bg.png ||
 console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 --picture bg || console --x 1024 --y 768 --left 160 --right 160 --top 140 --bottom 130 || console
 
 :start
